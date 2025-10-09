@@ -11,8 +11,8 @@
 # #
 
 ARG ARCH=amd64
-ARG ALPINE_VERSION=3.21
-FROM --platform=linux/${ARCH} ghcr.io//keeweb/alpine-base:${ALPINE_VERSION}
+ARG ALPINE_VERSION=latest
+FROM --platform=linux/${ARCH} alpine-base-local:${ALPINE_VERSION}
 
 # #
 #   Set Args
@@ -29,17 +29,17 @@ ARG NGINX_VERSION
 #   Set Labels
 # #
 
-LABEL org.opencontainers.image.authors="Antelle, Aetherinox"
+LABEL org.opencontainers.image.authors="KK"
 LABEL org.opencontainers.image.vendor="Keeweb"
-LABEL org.opencontainers.image.title="Keeweb Password Manager"
-LABEL org.opencontainers.image.description="Keeweb password manager"
+LABEL org.opencontainers.image.title="Keeweb Password Manager Local"
+LABEL org.opencontainers.image.description="Keeweb password manager local"
 LABEL org.opencontainers.image.source="https://github.com/keeweb/keeweb"
 LABEL org.opencontainers.image.documentation="https://github.com/keeweb/keeweb"
 LABEL org.opencontainers.image.url="https://github.com/keeweb/keeweb/pkgs/container/keeweb"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.architecture="${ARCH}"
 LABEL org.opencontainers.image.release="${RELEASE}"
-LABEL org.keeweb.image.maintainers="Antelle, Aetherinox"
+LABEL org.keeweb.image.maintainers="KK"
 LABEL org.keeweb.image.build-version="Version:- ${VERSION} Date:- ${BUILDDATE}"
 LABEL org.keeweb.image.build-version-alpine="${ALPINE_VERSION}"
 LABEL org.keeweb.image.build-architecture="${ARCH}"
@@ -57,7 +57,7 @@ ENV URL_REPO_BASE="https://github.com/keeweb/alpine-base/pkgs/container/alpine-b
 ENV URL_REPO_APP="https://github.com/keeweb/keeweb/pkgs/container/keeweb"
 ENV FILE_NAME="index.html"
 ENV WEB_IP="0.0.0.0"
-ENV WEB_PORT_HTTP=80
+#ENV WEB_PORT_HTTP=80
 ENV WEB_PORT_HTTPS=443
 ENV LOG_LEVEL=4
 
@@ -121,7 +121,8 @@ COPY root/ /
 #   Ports and volumes
 # #
 
-EXPOSE ${WEB_PORT_HTTP}/tcp ${WEB_PORT_HTTPS}/tcp
+#EXPOSE ${WEB_PORT_HTTP}/tcp ${WEB_PORT_HTTPS}/tcp
+EXPOSE ${WEB_PORT_HTTPS}/tcp
 
 # #
 #   In case user sets up the cron for a longer duration, do a first run

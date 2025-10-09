@@ -94,3 +94,12 @@ npm-debug.log
 .env
 .aws
 
+# #
+#   keepass volume
+#   keeweb volume
+#   root etc
+# #
+root/etc/*
+keepass/
+keeweb/
+.migrations

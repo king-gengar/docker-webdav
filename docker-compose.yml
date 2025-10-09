@@ -1,0 +1,49 @@
+services:
+    keeweb:
+        build:
+            context: .
+            dockerfile: Dockerfile
+            args:
+                VERSION: 1.19.0
+                BUILD_DATE: 20241216
+            no_cache: true
+        container_name: keeweb
+        hostname: keeweb
+        image: keeweb:latest                  # Dockerhub image
+        restart: unless-stopped
+        ports:
+            - "4443:443/tcp" # host:container
+        environment:
+            PUID: 1000
+            PGID: 1000
+            TZ: "Etc/UTC"
+            PORT_HTTPS: 4443
+        volumes:
+            - ./keeweb:/config
+        networks:
+            webdav:
+    webdav:
+        build:
+            context: ./webdav/2.4/
+            dockerfile: Dockerfile
+            no_cache: true
+        container_name: webdav
+        hostname: webdav
+        image: webdav-local:latest
+        restart: unless-stopped
+        expose:
+            - "443:443/tcp"
+        volumes:
+            - ./keepass:/var/lib/dav/data # volume of database
+            - ./keeweb/keys/cert.crt:/cert.pem # use cert generated from keeweb
+            - ./keeweb/keys/cert.key:/privkey.pem # use cert generated from keeweb
+            - ./keeweb/nginx/user.passwd:/user.passwd # mount own user.password
+            - ./keeweb/log/apache/error.log:/var/log/httpd/error.log
+            - ./keeweb/log/apache/access.log:/var/log/httpd/access.log
+        depends_on:
+            keeweb:
+                condition: service_started
+        networks:
+            webdav:
+networks:
+    webdav:

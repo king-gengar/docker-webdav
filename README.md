@@ -131,16 +131,53 @@ Create a new `📄 docker-compose.yml` with the following:
 ```yml
 services:
     keeweb:
+        build:
+            context: .
+            dockerfile: Dockerfile
+            args:
+                VERSION: 1.19.0
+                BUILD_DATE: 20241216
+            no_cache: true
         container_name: keeweb
-        image: ghcr.io/keeweb/keeweb:latest          # Github image
-      # image: keeweb/keeweb:latest                  # Dockerhub image
+        hostname: keeweb
+        image: keeweb:latest                  # Dockerhub image
         restart: unless-stopped
+        ports:
+            - "4443:443/tcp" # host:container
+        environment:
+            PUID: 1000
+            PGID: 1000
+            TZ: "Etc/UTC"
+            PORT_HTTPS: 4443
         volumes:
             - ./keeweb:/config
-        environment:
-            - PUID=1000
-            - PGID=1000
-            - TZ=Etc/UTC
+        networks:
+            webdav:
+    webdav:
+        build:
+            context: ./webdav/2.4/
+            dockerfile: Dockerfile
+            no_cache: true
+        container_name: webdav
+        hostname: webdav
+        image: webdav-local:latest
+        restart: unless-stopped
+        expose:
+            - "443:443/tcp"
+        volumes:
+            - ./keepass:/var/lib/dav/data # volume of database
+            - ./keeweb/keys/cert.crt:/cert.pem # use cert generated from keeweb
+            - ./keeweb/keys/cert.key:/privkey.pem # use cert generated from keeweb
+            - ./keeweb/nginx/user.passwd:/user.passwd # mount own user.password
+            - ./keeweb/log/apache/error.log:/var/log/httpd/error.log
+            - ./keeweb/log/apache/access.log:/var/log/httpd/access.log
+        depends_on:
+            keeweb:
+                condition: service_started
+        networks:
+            webdav:
+networks:
+    webdav:
 ```
 
 <br />
@@ -485,7 +522,41 @@ Save the files and then give Traefik and your Keeweb containers a restart.
 <br />
 
 ### Authentik Integration
-
+# Proxy to Apache using HTTPS
+        proxy_pass https://webdav:443;
+        
+        # Standard headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        
+        # WebDAV specific headers
+        proxy_set_header Destination $http_destination;
+        proxy_set_header Overwrite $http_overwrite;
+        proxy_set_header Date $http_date;
+        
+        # Important for PUT requests
+        proxy_request_buffering on;
+        proxy_pass_request_headers on;
+        proxy_pass_request_body on;
+        proxy_method $request_method;
+        
+        # Required for WebDAV OPTIONS
+        proxy_pass_header Date;
+        proxy_pass_header Server;
+        
+        # For handling large uploads
+        proxy_connect_timeout 600;
+        proxy_send_timeout 600;
+        proxy_read_timeout 600;
+        send_timeout 600;
+        
+        # Self-signed certificate handling for internal communication
+        proxy_ssl_verify off;  # If using self-signed certs internally
+        # OR point to a trusted CA bundle that verifies the internal cert
+        # proxy_ssl_trusted_certificate /etc/nginx/ssl/internal-ca.crt;
+        # proxy_ssl_verify on;
 This section will not explain how to install and set up [Authentik](https://goauthentik.io/). We are only going to cover adding Keeweb integration to Authentik.
 
 <br />

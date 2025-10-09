@@ -1,4 +1,5 @@
-FROM httpd:alpine
+# pulls debian image instead of alpine. Issues running alpine image
+FROM httpd:latest
 
 # These variables are inherited from the httpd:alpine image:
 # ENV HTTPD_PREFIX /usr/local/apache2
@@ -26,7 +27,7 @@ RUN set -ex; \
     done; \
     \
     # Make sure other modules are enabled.
-    for i in alias headers mime setenvif; do \
+    for i in alias headers mime setenvif rewrite; do \
         sed -i -e "/^#LoadModule ${i}_module.*/s/^#//" "conf/httpd.conf"; \
     done; \
     \
@@ -46,10 +47,12 @@ RUN set -ex; \
     mkdir -p "conf/sites-enabled"; \
     ln -s ../conf-available/dav.conf "conf/conf-enabled"; \
     ln -s ../sites-available/default.conf "conf/sites-enabled"; \
+    \
     # Install openssl if we need to generate a self-signed certificate.
-    apk add --no-cache openssl
+    # apk add --no-cache openssl
+    apt install openssl
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-EXPOSE 80/tcp 443/tcp
+EXPOSE 443/tcp
 ENTRYPOINT [ "docker-entrypoint.sh" ]
 CMD [ "httpd-foreground" ]

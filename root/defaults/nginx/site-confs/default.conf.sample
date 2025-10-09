@@ -8,10 +8,15 @@
 #                   https://hub.docker.com/repository/docker/keeweb/alpine-base
 # #
 
+upstream webdav {
+    server webdav:443;
+    keepalive 32;
+}
+
 server
 {
-    listen 80 default_server;
-    listen [::]:80 default_server;
+    #listen 80 default_server;
+    #listen [::]:80 default_server;
     listen 443 ssl default_server;
     listen [::]:443 ssl default_server;
 
@@ -31,8 +36,9 @@ server
     location /
     {
         # enable for basic auth
-        #auth_basic                 "Restricted";
-        #auth_basic_user_file       /config/nginx/.htpasswd;
+        auth_basic                 "Basic";
+        auth_basic_user_file       /config/nginx/user.passwd;
+        
 
         # index > fancy
         fancyindex                  on;
@@ -60,13 +66,70 @@ server
         gzip_static on;
 
         try_files $uri $uri/ /index.html /index.htm /index.php$is_args$args;
+
+    }
+
+    location /local_db.kdbx
+    {
+        proxy_pass https://webdav;
+        
+        # Standard headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        
+        # WebDAV specific headers
+        proxy_set_header Destination $http_destination;
+        proxy_set_header Overwrite $http_overwrite;
+        proxy_set_header Date $http_date;
+        
+        # Important for PUT requests
+        proxy_request_buffering on;
+        proxy_pass_request_headers on;
+        proxy_pass_request_body on;
+        proxy_method $request_method;
+        
+        # Required for WebDAV OPTIONS
+        proxy_pass_header Date;
+        proxy_pass_header Server;
+        
+        # For handling large uploads
+        proxy_connect_timeout 600;
+        proxy_send_timeout 600;
+        proxy_read_timeout 600;
+        send_timeout 600;
+        
+        # Self-signed certificate handling for internal communication
+        proxy_ssl_verify off;  # If using self-signed certs internally
+        # OR point to a trusted CA bundle that verifies the internal cert
+        # proxy_ssl_trusted_certificate /etc/nginx/ssl/internal-ca.crt;
+        # proxy_ssl_verify on;
+
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Credentials' 'true' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, HEAD, POST, PUT, OPTIONS, MOVE, DELETE, COPY, LOCK, UNLOCK' always;
+        add_header 'Access-Control-Allow-Headers' 'Authorization,DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,X-Accept-Charset,X-Accept,origin,accept,if-match,destination,overwrite' always;
+        add_header 'Access-Control-Expose-Headers' 'ETag' always;
+        add_header 'Access-Control-Max-Age' 1728000 always;
+        if ($request_method = 'OPTIONS') {
+            add_header 'Content-Type' 'text/plain charset=UTF-8';
+            add_header 'Content-Length' 0;
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Credentials' 'true';
+            add_header 'Access-Control-Allow-Methods' 'GET, HEAD, POST, PUT, OPTIONS, MOVE, DELETE, COPY, LOCK, UNLOCK';
+            add_header 'Access-Control-Allow-Headers' 'Authorization,DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,X-Accept-Charset,X-Accept,origin,accept,if-match,destination,overwrite';
+            add_header 'Access-Control-Expose-Headers' 'ETag';
+            add_header 'Access-Control-Max-Age' 1728000;
+            return 204;
+        }
     }
 
     location ~ ^(.+\.php)(.*)$
     {
         # enable the next two lines for http auth
-        #auth_basic "Restricted";
-        #auth_basic_user_file /config/nginx/.htpasswd;
+        # auth_basic "Basic";
+        # auth_basic_user_file /config/nginx/.htpasswd;
 
         fastcgi_split_path_info ^(.+\.php)(.*)$;
         if (!-f $document_root$fastcgi_script_name) { return 404; }

@@ -11,8 +11,8 @@
 # #
 
 ARG ARCH=amd64
-ARG ALPINE_VERSION=latest
-FROM --platform=linux/${ARCH} alpine-base-local:${ALPINE_VERSION}
+ARG ALPINE_DOCKER_BUILD
+FROM --platform=linux/${ARCH} alpine-base-local:${ALPINE_DOCKER_BUILD}
 
 # #
 #   Set Args

@@ -1123,9 +1123,16 @@ For the argument `VERSION`; specify the current release of Keeweb which will be 
 docker build --build-arg VERSION=1.19.0 --build-arg BUILD_DATE=20241216 -t keeweb:latest -t keeweb:1.19.0 -t keeweb:1.19.0-amd64 -f Dockerfile .
 ```
 
+##### docker compose
 ```shell
-# Build docker/keeweb amd64 with dev version using docker compose
-docker compose -f docker-compose-dev.yml build                                                                                     
+# Build docker/keeweb amd64 latest
+docker compose -f docker-compose.yml build
+```
+
+```shell
+# Build docker/keeweb amd64 with dev version using override file.
+# You can modify or add services/variables in .dev.yml override file that way the docker-compose.yml remains untouched
+docker compose -f docker-compose.yml -f docker-compose.dev.yml build
 ```
 
 <br />

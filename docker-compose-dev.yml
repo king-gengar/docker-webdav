@@ -2,14 +2,14 @@ services:
     keeweb:
         build:
             dockerfile: Dockerfile
-            args:
+            args: # The defined arguments on the compose file are available on the Dockerfile but only before and on the FROM. After the FROM the arguments are not available:
                 VERSION: 1.19.0
                 BUILD_DATE: 20241216
-                ALPINE_DOCKER_BUILD: "latest"
+                ALPINE_DOCKER_BUILD: "dev"
             no_cache: true
         container_name: keeweb
         hostname: keeweb
-        image: keeweb:latest                  # Dockerhub image
+        image: keeweb:dev                  # Dockerhub image
         restart: unless-stopped
         ports:
             - "4443:443/tcp" # host:container

@@ -1,0 +1,6 @@
+services:
+    keeweb:
+        build:
+            args: # The defined arguments on the compose file are available on the Dockerfile but only before and on the FROM. After the FROM the arguments are not available:
+                ALPINE_DOCKER_BUILD: "dev"
+        image: keeweb:dev                  # Dockerhub image

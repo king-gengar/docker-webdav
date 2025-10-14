@@ -119,8 +119,13 @@ Instructions on using this container
 ### Docker Run
 If you want to bring the docker container up quickly, use the following command:
 
+
 ```shell
-docker run -d --restart=unless-stopped -p 443:443 --name keeweb -v ${PWD}/keeweb:/config ghcr.io/keeweb/keeweb:latest
+# Latest
+docker run -d --restart=unless-stopped -p 4443:443 --name keeweb -v ${PWD}/keeweb:/config keeweb:latest
+
+# dev
+docker run -d --restart=unless-stopped -p 4443:443 --name keeweb -v ${PWD}/keeweb:/config keeweb:dev 
 ```
 
 <br />
@@ -132,11 +137,11 @@ Create a new `📄 docker-compose.yml` with the following:
 services:
     keeweb:
         build:
-            context: .
             dockerfile: Dockerfile
             args:
                 VERSION: 1.19.0
                 BUILD_DATE: 20241216
+                ALPINE_DOCKER_BUILD: "latest"
             no_cache: true
         container_name: keeweb
         hostname: keeweb
@@ -151,11 +156,14 @@ services:
             PORT_HTTPS: 4443
         volumes:
             - ./keeweb:/config
+        depends_on:
+             webdav:
+                 condition: service_started
         networks:
             webdav:
     webdav:
         build:
-            context: ./webdav/2.4/
+            context: ./docker-webdav/2.4/
             dockerfile: Dockerfile
             no_cache: true
         container_name: webdav
@@ -171,14 +179,13 @@ services:
             - ./keeweb/nginx/user.passwd:/user.passwd # mount own user.password
             - ./keeweb/log/apache/error.log:/var/log/httpd/error.log
             - ./keeweb/log/apache/access.log:/var/log/httpd/access.log
-        depends_on:
-            keeweb:
-                condition: service_started
         networks:
             webdav:
 networks:
     webdav:
 ```
+
+Configure ARGS for your needs and make sure to update the Dockerfile.
 
 <br />
 
@@ -893,7 +900,7 @@ To build a docker image for Keeweb, you need two different docker images:
 
 <br />
 
-### Before Building
+### Before Building - Build alpine base image
 
 Prior to building the **[🔀 docker/alpine-base](https://github.com/keeweb/keeweb/tree/docker/alpine-base)** and **[🔀 docker/keeweb](https://github.com/keeweb/keeweb/tree/docker/keeweb)** docker images, you **must** ensure the following conditions are met. If the below tasks are not performed, your docker container will throw the following errors when started:
 
@@ -980,8 +987,10 @@ For the branch **[🔀 docker/core](https://github.com/keeweb/keeweb/tree/docker
 sudo chmod +x docker-images.v3
 sudo chmod +x kwown.v1
 sudo chmod +x package-install.v1
-sudo chmod +x with-contenv.v1
+# sudo chmod +x with-contenv.v1
 ```
+
+Do not need to do this since it will already be done in the `Dockerfile`
 
 <br />
 
@@ -1000,8 +1009,11 @@ Once cloned, the calls to include the scripts in this `🔀 docker/core` branch 
 #### amd64
 
 ```shell ignore
-# Build keeweb alpine-base amd64 🖥️
-docker build --build-arg VERSION=3.20 --build-arg BUILD_DATE=20241216 -t alpine-base:latest -t alpine-base:3.20-amd64 -f Dockerfile .
+# Build keeweb alpine-base-local with latest tag for amd64 🖥️
+docker build --build-arg VERSION=3.20 --build-arg BUILD_DATE=20241216 -t alpine-base-local:latest -f Dockerfile .
+
+# Build keeweb alpine-base-local with dev tag for amd64 🖥️
+docker build --build-arg VERSION=3.21 --build-arg BUILD_DATE=20251010 -t alpine-base-local:dev -f Dockerfile .
 ```
 
 <br />
@@ -1107,8 +1119,13 @@ For the argument `VERSION`; specify the current release of Keeweb which will be 
 #### amd64
 
 ```shell
-# Build docker/keeweb amd64
+# Build docker/keeweb amd64 with local
 docker build --build-arg VERSION=1.19.0 --build-arg BUILD_DATE=20241216 -t keeweb:latest -t keeweb:1.19.0 -t keeweb:1.19.0-amd64 -f Dockerfile .
+```
+
+```shell
+# Build docker/keeweb amd64 with dev version using docker compose
+docker compose -f docker-compose-dev.yml build                                                                                     
 ```
 
 <br />

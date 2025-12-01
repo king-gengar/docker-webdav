@@ -36,7 +36,7 @@ services:
         image: webdav-local:latest
         restart: unless-stopped
         expose:
-            - "443:443/tcp"
+            - "443"
         volumes:
             - ./keepass:/var/lib/dav/data # volume of database
             - ./keeweb/keys/cert.crt:/cert.pem # use cert generated from keeweb

@@ -184,6 +184,22 @@ services:
 networks:
     webdav:
 ```
+Configuration after loading:
+
+Once it loads go to WebDav option:
+
+    url: localhost:4443/local_db.kdbx
+    username:
+    password:
+
+Settings > Security > WebDAV > Save Method > Select `Overwrite the kdbx file with PUT`
+
+
+---
+
+
+
+
 
 Configure ARGS for your needs and make sure to update the Dockerfile.
 
